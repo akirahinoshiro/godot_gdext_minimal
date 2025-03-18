@@ -1,0 +1,20 @@
+#ignore all created files
+*
+
+#set exceptions for needed folders
+!src/*.cpp
+!src/*.hpp
+!src/*.c
+!src/*.h
+!src/.clang-format
+
+#set exceptions for needed files
+!*.gitignore
+!*README.md
+!CMakeLists.txt
+
+#even if in subfolder
+!*/
+
+# ignore nested folders
+godot-cpp/
