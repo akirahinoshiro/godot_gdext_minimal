@@ -1,0 +1,1 @@
+# godot_gdext_minimal
