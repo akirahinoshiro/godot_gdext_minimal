@@ -59,4 +59,5 @@ FILE(GLOB HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.h")
 
 # create and link the library
 add_library(gdexample SHARED ${CPP_FILES})
+SET_TARGET_PROPERTIES(gdexample PROPERTIES DEBUG_POSTFIX d)
 target_link_libraries(gdexample godot-cpp)
