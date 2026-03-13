@@ -1,12 +1,37 @@
 cmake_minimum_required(VERSION 3.16)
-
-# Projektname und Version
 project(gdextension_cpp_example VERSION 1.0 LANGUAGES CXX)
-
-# Setze C++-Standard
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(Callgrind ON)
 
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+# using Clang or GCC
+    if(Callgrind STREQUAL "ON")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic -Werror -O2")
+        #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+    else()
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic -Werror -O2 -fsanitize=undefined -fno-sanitize-recover=all -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fno-sanitize=null -fno-sanitize=alignment -fsanitize=thread -Wno-error=tsan")
+    endif()
+
+# using Intel C++
+    elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+
+# using Visual Studio C++
+    elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+        if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+        string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    else()
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+    endif()
+endif()
+
+# use pthreads if unix or unix-alike (linux)
+if(UNIX)
+  set(THREADS_PREFER_PTHREAD_FLAG ON)
+  find_package(Threads REQUIRED)
+endif()
+
+## Godot this should only work on linux
 # Check if godot-cpp folder exists, otherwise clone it
 if(NOT EXISTS "${CMAKE_SOURCE_DIR}/godot-cpp")
     message(STATUS "godot-cpp folder not found. Cloning from Git...")
@@ -16,27 +41,22 @@ if(NOT EXISTS "${CMAKE_SOURCE_DIR}/godot-cpp")
     )
 endif()
 
-# Godot-C++-Bindings einbinden
+# Godot-C++-bindings
+# Temporarily remove -pedantic for godot-cpp
+string(REPLACE "-pedantic" "" CMAKE_CXX_FLAGS_NO_PEDANTIC "${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_NO_PEDANTIC}")
 add_subdirectory(godot-cpp)
+# Restore the original CMAKE_CXX_FLAGS
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_NO_PEDANTIC} -pedantic")
 
-# Quellcode-Verzeichnis hinzufügen
-include_directories(src)
 
-# Alle .cpp-Dateien im src-Ordner finden
-file(GLOB SOURCES src/*.cpp)
+INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-# Bibliothek erstellen
-if(APPLE)
-    add_library(gdexample SHARED ${SOURCES})
-    set_target_properties(gdexample PROPERTIES
-        OUTPUT_NAME "libgdexample"
-        FRAMEWORK TRUE
-    )
-elseif(IOS)
-    add_library(gdexample STATIC ${SOURCES})
-else()
-    add_library(gdexample SHARED ${SOURCES})
-endif()
+FILE(GLOB CPP_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+FILE(GLOB HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp")
+FILE(GLOB HEADER_FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.h")
 
-# Godot-C++-Bindings mit der Bibliothek verlinken
+# create and link the library
+add_library(gdexample SHARED ${CPP_FILES})
 target_link_libraries(gdexample godot-cpp)
