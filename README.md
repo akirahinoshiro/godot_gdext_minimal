@@ -7,4 +7,4 @@
 
 # Gentoo advise:
 1. needs to be built using deprecated flag
-2. using double-precision flag changes speed and behaviour of movement
+2. using double-precision flag changes speed and behaviour of movement, there are good reasons to avoid double precision just don't use it until you **REALLY** know what you are doing
